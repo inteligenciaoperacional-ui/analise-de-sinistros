@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analise de Sinistro - Grupo JCA</title>
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dxnruvmgu/image/upload/v1775248407/Intelig%C3%AAncia_branco_m524fk.png">
+    <title>Cadastro de Sinistro - Grupo JCA</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -603,7 +602,7 @@
         var todos  = [];
         var MAP_EMP = {'AV1001':'Auto Viação 1001','COMETA':'Viação Cometa','CATARINENSE':'Auto Viação Catarinense','EXPRESSO DO SUL':'Viação Expresso do Sul','SIT':'Viação Rápido Ribeirão'};
 
-        fetch('Quadro.json').then(function(r){return r.json();}).then(function(data){
+        fetch('https://raw.githubusercontent.com/inteligenciaoperacional-ui/analise-de-sinistros/refs/heads/main/Quadro.json').then(function(r){return r.json();}).then(function(data){
             todos = (data&&data.body&&data.body.results&&data.body.results[0]&&data.body.results[0].tables&&data.body.results[0].tables[0]&&data.body.results[0].tables[0].rows)||[];
             STATUS.textContent=''; INPUT.disabled=false; INPUT.placeholder='Insira a matrícula';
         }).catch(function(){STATUS.textContent='⚠️ Erro ao carregar Quadro.json';});
