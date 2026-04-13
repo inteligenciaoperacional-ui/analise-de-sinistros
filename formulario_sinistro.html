@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Sinistro</title>
+    <link rel="stylesheet" href="estilo.css">
+    <style>
+        /* ── Busca + Dropdown de Matrícula ── */
+        .select-wrapper {
+            position: relative;
+        }
+
+        #inputBusca {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #inputBusca:focus {
+            outline: none;
+            border-color: #00003c;
+            box-shadow: 0 0 0 3px rgba(0, 0, 60, 0.1);
+        }
+
+        .icone-busca {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            pointer-events: none;
+            font-size: 16px;
+        }
+
+        #dropdownLista {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #d1d9e0;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 999;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        #dropdownLista.aberto { display: block; }
+
+        .item-dropdown {
+            padding: 10px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+
+        .item-dropdown:hover,
+        .item-dropdown.selecionado {
+            background-color: #eef0f8;
+            color: #00003c;
+            font-weight: 600;
+        }
+
+        .item-dropdown span.matricula-num {
+            font-weight: 700;
+            color: #00003c;
+            margin-right: 6px;
+        }
+
+        .sem-resultado {
+            padding: 12px;
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+        }
+
+        /* ── Card de dados preenchidos automaticamente ── */
+        .card-funcionario {
+            display: none;
+            background: #f0f4ff;
+            border: 1px solid #c0ccf0;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .card-funcionario.visivel { display: block; }
+
+        .card-funcionario strong { color: #00003c; }
+
+        .card-linha {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            margin-top: 6px;
+        }
+
+        .card-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 140px;
+        }
+
+        .card-item .rotulo {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 2px;
+        }
+
+        .card-item .valor {
+            font-size: 13px;
+            color: #222;
+        }
+
+        /* ── Loading ── */
+        #statusCarregamento {
+            font-size: 13px;
+            color: #888;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ddd;
+            border-top-color: #00003c;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Campos readonly ── */
+        input[readonly] {
+            background-color: #f5f5f5;
+            color: #555;
+            cursor: default;
+        }
+
+        /* ── Botão limpar seleção ── */
+        #btnLimpar {
+            display: none;
+            background: none;
+            border: 1px solid #cc3333;
+            color: #cc3333;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.2s;
+        }
+
+        #btnLimpar:hover {
+            background-color: #cc3333;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-login">
+
+    <div class="header-form">
+        <h2>Registro de Sinistro</h2>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         BLOCO: SELEÇÃO DE MATRÍCULA
+    ════════════════════════════════════════ -->
+    <h3 class="secao-titulo">Identificação do Funcionário</h3>
+
+    <div class="campo-grupo">
+        <label for="inputBusca">Matrícula / Nome do Funcionário *</label>
+        <div class="select-wrapper">
+            <input
+                type="text"
+                id="inputBusca"
+                placeholder="Digite a matrícula ou nome para buscar..."
+                autocomplete="off"
+            >
+            <span class="icone-busca">⌕</span>
+            <div id="dropdownLista"></div>
+        </div>
+
+        <div id="statusCarregamento">
+            <span class="spinner"></span> Carregando quadro de funcionários...
+        </div>
+
+        <button id="btnLimpar" type="button">✕ Limpar seleção</button>
+
+        <!-- Card com dados do funcionário selecionado -->
+        <div class="card-funcionario" id="cardFuncionario">
+            <strong id="cardNomeCompleto"></strong>
+            <div class="card-linha">
+                <div class="card-item">
+                    <span class="rotulo">Matrícula</span>
+                    <span class="valor" id="cardMatricula"></span>
+                </div>
+                <div class="card-item">
+                    <span class="rotulo">Empresa</span>
+                    <span class="valor" id="cardEmpresa"></span>
+                </div>
+                <div class="card-item">
+                    <span class="rotulo">Setor</span>
+                    <span class="valor" id="cardSetor"></span>
+                </div>
+                <div class="card-item">
+                    <span class="rotulo">Descrição</span>
+                    <span class="valor" id="cardDescricao"></span>
+                </div>
+                <div class="card-item">
+                    <span class="rotulo">Líder</span>
+                    <span class="valor" id="cardLider"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campos ocultos preenchidos automaticamente (use nos campos hidden do seu form) -->
+    <input type="hidden" id="campoMatricula"  name="matricula">
+    <input type="hidden" id="campoNome"       name="nome">
+    <input type="hidden" id="campoEmpresa"    name="empresa">
+    <input type="hidden" id="campoSetor"      name="setor">
+    <input type="hidden" id="campoCPF"        name="cpf">
+    <input type="hidden" id="campoLider"      name="lider">
+
+    <!-- ════════════════════════════════════════
+         BLOCO: RESTANTE DO FORMULÁRIO DE SINISTRO
+         (adicione seus campos abaixo normalmente)
+    ════════════════════════════════════════ -->
+    <h3 class="secao-titulo">Dados do Sinistro</h3>
+
+    <div class="linha-campos">
+        <div class="campo-grupo">
+            <label for="dataOcorrencia">Data da Ocorrência *</label>
+            <input type="date" id="dataOcorrencia" name="data_ocorrencia">
+        </div>
+        <div class="campo-grupo">
+            <label for="horaOcorrencia">Hora</label>
+            <input type="time" id="horaOcorrencia" name="hora_ocorrencia">
+        </div>
+    </div>
+
+    <div class="campo-grupo">
+        <label>Tipo de Sinistro *</label>
+        <div class="radio-group">
+            <input type="radio" id="tipoAcidente"  name="tipo_sinistro" value="Acidente">
+            <label for="tipoAcidente">Acidente</label>
+            <input type="radio" id="tipoRoubo"     name="tipo_sinistro" value="Roubo">
+            <label for="tipoRoubo">Roubo</label>
+            <input type="radio" id="tipoIncendio"  name="tipo_sinistro" value="Incêndio">
+            <label for="tipoIncendio">Incêndio</label>
+            <input type="radio" id="tipoOutro"     name="tipo_sinistro" value="Outro">
+            <label for="tipoOutro">Outro</label>
+        </div>
+    </div>
+
+    <div class="campo-grupo">
+        <label for="descricaoSinistro">Descrição da Ocorrência *</label>
+        <textarea id="descricaoSinistro" name="descricao" rows="4"
+                  placeholder="Descreva o que aconteceu..."></textarea>
+    </div>
+
+    <!-- Botões -->
+    <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="btn-voltar" type="button">← Voltar</button>
+        <button class="btn-proximo" type="button">Próximo →</button>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     SCRIPT: Carrega JSON e controla dropdown
+════════════════════════════════════════ -->
+<script>
+(function () {
+    const INPUT       = document.getElementById('inputBusca');
+    const LISTA       = document.getElementById('dropdownLista');
+    const STATUS      = document.getElementById('statusCarregamento');
+    const CARD        = document.getElementById('cardFuncionario');
+    const BTN_LIMPAR  = document.getElementById('btnLimpar');
+
+    let todosFuncionarios = [];  // array com todos os registros do JSON
+    let selecionado = null;
+
+    /* ── 1. Carrega o JSON ───────────────────────────────── */
+    fetch('Quadro.json')
+        .then(res => res.json())
+        .then(data => {
+            // Navega até o array de rows independente da estrutura
+            todosFuncionarios = data?.body?.results?.[0]?.tables?.[0]?.rows ?? [];
+
+            STATUS.style.display = 'none';
+            INPUT.disabled = false;
+            INPUT.placeholder = `Buscar entre ${todosFuncionarios.length.toLocaleString('pt-BR')} funcionários...`;
+        })
+        .catch(() => {
+            STATUS.innerHTML = '⚠️ Erro ao carregar Quadro.json. Verifique o caminho do arquivo.';
+        });
+
+    /* ── 2. Filtra ao digitar ────────────────────────────── */
+    INPUT.addEventListener('input', function () {
+        const termo = this.value.trim().toLowerCase();
+
+        if (!termo) { fecharDropdown(); return; }
+
+        const filtrados = todosFuncionarios
+            .filter(f =>
+                f['[Matricula]']?.toLowerCase().includes(termo) ||
+                f['[Nome]']?.toLowerCase().includes(termo)
+            )
+            .slice(0, 50); // limita a 50 resultados para performance
+
+        renderizarLista(filtrados);
+    });
+
+    /* ── 3. Renderiza os itens ───────────────────────────── */
+    function renderizarLista(lista) {
+        LISTA.innerHTML = '';
+
+        if (!lista.length) {
+            LISTA.innerHTML = '<div class="sem-resultado">Nenhum funcionário encontrado.</div>';
+            LISTA.classList.add('aberto');
+            return;
+        }
+
+        lista.forEach(f => {
+            const item = document.createElement('div');
+            item.className = 'item-dropdown';
+            item.innerHTML = `
+                <span class="matricula-num">${f['[Matricula]']}</span>
+                ${f['[Nome]']}
+                ${f['[Empresa]'] ? `<small style="color:#999;float:right">${f['[Empresa]']}</small>` : ''}
+            `;
+            item.addEventListener('click', () => selecionarFuncionario(f));
+            LISTA.appendChild(item);
+        });
+
+        LISTA.classList.add('aberto');
+    }
+
+    /* ── 4. Seleciona um funcionário ─────────────────────── */
+    function selecionarFuncionario(f) {
+        selecionado = f;
+        INPUT.value = f['[Matricula_Nome]'] || `${f['[Matricula]']} - ${f['[Nome]']}`;
+
+        // Preenche campos hidden
+        document.getElementById('campoMatricula').value = f['[Matricula]']  || '';
+        document.getElementById('campoNome').value      = f['[Nome]']       || '';
+        document.getElementById('campoEmpresa').value   = f['[Empresa]']    || '';
+        document.getElementById('campoSetor').value     = f['[Setor]']      || '';
+        document.getElementById('campoCPF').value       = f['[CPF]']        || '';
+        document.getElementById('campoLider').value     = f['[Lider]']      || '';
+
+        // Exibe card
+        document.getElementById('cardNomeCompleto').textContent = f['[Nome]'] || '—';
+        document.getElementById('cardMatricula').textContent    = f['[Matricula]']  || '—';
+        document.getElementById('cardEmpresa').textContent      = f['[Empresa]']    || '—';
+        document.getElementById('cardSetor').textContent        = f['[Setor]']      || '—';
+        document.getElementById('cardDescricao').textContent    = f['[Descrição]']  || '—';
+        document.getElementById('cardLider').textContent        = f['[Lider]']      || '—';
+
+        CARD.classList.add('visivel');
+        BTN_LIMPAR.style.display = 'inline-block';
+        fecharDropdown();
+    }
+
+    /* ── 5. Limpar seleção ───────────────────────────────── */
+    BTN_LIMPAR.addEventListener('click', () => {
+        selecionado = null;
+        INPUT.value = '';
+        CARD.classList.remove('visivel');
+        BTN_LIMPAR.style.display = 'none';
+
+        ['campoMatricula','campoNome','campoEmpresa','campoSetor','campoCPF','campoLider']
+            .forEach(id => document.getElementById(id).value = '');
+    });
+
+    /* ── 6. Fechar ao clicar fora ────────────────────────── */
+    document.addEventListener('click', e => {
+        if (!INPUT.contains(e.target) && !LISTA.contains(e.target)) {
+            fecharDropdown();
+        }
+    });
+
+    function fecharDropdown() {
+        LISTA.classList.remove('aberto');
+        LISTA.innerHTML = '';
+    }
+
+    INPUT.disabled = true; // desabilitado até o JSON carregar
+})();
+</script>
+
+</body>
+</html>
