@@ -227,9 +227,11 @@ async function carregarDadosTelemetria() {
 
         const linhas = linhasBrutas.map(l => l.split(sep).map(c => c.replace(/"/g, '').trim()));
         
-        const idxTime = 53, idxAce = 1, idxFreio = 42, idxRPM = 45, idxVel = 51;
+        const idxTime = 49, idxAce = 1, idxFreio = 38, idxRPM = 41, idxVel = 47;
         let labels = [], dVel = [], dRPM = [], dAce = [], dFreio = [];
-        const dadosDesejados = linhas.slice(1, 13).reverse(); 
+        // Pega as ultimas 12 linhas (dados mais recentes inseridos na planilha)
+        const linhasValidas = linhas.filter(l => l.length > 1 && l[0] !== "");
+        const dadosDesejados = linhasValidas.slice(-12);
 
         dadosDesejados.forEach(col => {
             if (col.length > 1) {
