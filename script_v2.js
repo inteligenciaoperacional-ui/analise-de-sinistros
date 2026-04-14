@@ -227,7 +227,7 @@ async function carregarDadosTelemetria() {
 
         const linhas = linhasBrutas.map(l => l.split(sep).map(c => c.replace(/"/g, '').trim()));
         
-        const idxTime = 49, idxAce = 1, idxFreio = 38, idxRPM = 41, idxVel = 47;
+        const idxTime = 53, idxAce = 1, idxFreio = 42, idxRPM = 45, idxVel = 51;
         let labels = [], dVel = [], dRPM = [], dAce = [], dFreio = [];
         // Pega as ultimas 12 linhas e inverte para ordem cronologica (mais antigo -> mais recente)
         const linhasValidas = linhas.filter(l => l.length > 1 && l[0] !== "");
