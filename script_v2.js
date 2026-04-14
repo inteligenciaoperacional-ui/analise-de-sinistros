@@ -235,7 +235,9 @@ async function carregarDadosTelemetria() {
 
         dadosDesejados.forEach(col => {
             if (col.length > 1) {
-                labels.push(col[idxTime] || ""); 
+                // Busca o timestamp nos indices proximos ate encontrar um valor com data
+                var tVal = col[53] || col[52] || col[51] || col[49] || col[22] || "";
+                labels.push(tVal);
                 const limparNum = (val) => {
                     if (!val) return 0;
                     let limpo = val.replace(/[^\d,.-]/g, '');
