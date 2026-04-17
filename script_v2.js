@@ -227,11 +227,10 @@ async function carregarDadosTelemetria() {
 
         const linhas = linhasBrutas.map(l => l.split(sep).map(c => c.replace(/"/g, '').trim()));
         
-        const idxTime = 53, idxAce = 1, idxFreio = 42, idxRPM = 45, idxVel = 51;
+        const idxTime = 53, idxAce = 1, idxFreio = 36, idxRPM = 45, idxVel = 51;
         let labels = [], dVel = [], dRPM = [], dAce = [], dFreio = [];
-        // Pega as ultimas 12 linhas e inverte para ordem cronologica (mais antigo -> mais recente)
-        const linhasValidas = linhas.filter(l => l.length > 1 && l[0] !== "");
-        const dadosDesejados = linhasValidas.slice(-12).reverse();
+        // Le linhas 2 a 13 da planilha (indices 1-12 do CSV) e inverte: linha13->2 = cronologico
+        const dadosDesejados = linhas.slice(1, 13).reverse();
 
         dadosDesejados.forEach(col => {
             if (col.length > 1) {
