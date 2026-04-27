@@ -223,11 +223,23 @@ async function carregarDadosTelemetria() {
         
         const csvData = await response.text();
         let linhasBrutas = csvData.split('\n');
-        let sep = linhasBrutas[0].split(',').length < 5 ? ';' : ',';
 
-        const linhas = linhasBrutas.map(l => l.split(sep).map(c => c.replace(/"/g, '').trim()));
+        // Parser CSV correto: respeita campos entre aspas (ex: Link Google com virgulas)
+        function parseCSVLine(line) {
+            const cols = [];
+            let cur = '', inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') { inQuotes = !inQuotes; }
+                else if (ch === ',' && !inQuotes) { cols.push(cur.trim()); cur = ''; }
+                else { cur += ch; }
+            }
+            cols.push(cur.trim());
+            return cols;
+        }
+        const linhas = linhasBrutas.map(l => parseCSVLine(l));
         
-        const idxTime = 53, idxAce = 1, idxFreio = 41, idxRPM = 45, idxVel = 51;
+        const idxTime = 49, idxAce = 1, idxFreio = 38, idxRPM = 41, idxVel = 47;
         let labels = [], dVel = [], dRPM = [], dAce = [], dFreio = [];
         // Le linhas 2 a 13 da planilha (indices 1-12 do CSV) e inverte: linha13->2 = cronologico
         const dadosDesejados = linhas.slice(1, 13).reverse();
@@ -235,7 +247,7 @@ async function carregarDadosTelemetria() {
         dadosDesejados.forEach(col => {
             if (col.length > 1) {
                 // Busca o timestamp nos indices proximos ate encontrar um valor com data
-                var tVal = col[53] || col[52] || col[51] || col[49] || col[22] || "";
+                var tVal = col[49] || "";
                 labels.push(tVal);
                 const limparNum = (val) => {
                     if (!val) return 0;
