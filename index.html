@@ -248,6 +248,7 @@
                     <tr>
                         <th>Data</th>
                         <th>Versão</th>
+                        <th>Criado em</th>
                         <th>Empresa</th>
                         <th>Prefixo</th>
                         <th>Motorista</th>
@@ -285,6 +286,19 @@ let todos = [];
 function numOcorrencia(s) {
     if (!s.data_ocorrido || !s.prefixo) return '—';
     return s.data_ocorrido.replace(/-/g, '') + ' - ' + s.prefixo;
+}
+
+function fmtTimestamp(ts) {
+    if (!ts) return '—';
+    // Firestore timestamp vem como objeto com seconds
+    var d = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
+    if (isNaN(d)) return '—';
+    var dia  = String(d.getDate()).padStart(2,'0');
+    var mes  = String(d.getMonth()+1).padStart(2,'0');
+    var ano  = d.getFullYear();
+    var hora = String(d.getHours()).padStart(2,'0');
+    var min  = String(d.getMinutes()).padStart(2,'0');
+    return dia+'/'+mes+'/'+ano+'<br><small style="color:#999">'+hora+':'+min+'</small>';
 }
 
 function fmt(iso) {
@@ -363,6 +377,7 @@ function renderizar(lista) {
                 <span class="badge-versao v${s.versao||1}">V${s.versao||1}</span>
                 ${s.origem_id ? '<br><small style="color:#aaa;font-size:10px;">origem: '+s.origem_id.substring(0,6)+'...</small>' : ''}
             </td>
+            <td style="font-size:12px;white-space:nowrap;">${fmtTimestamp(s.criadoEm)}</td>
             <td><span class="badge badge-empresa">${s.empresa||'—'}</span></td>
             <td><strong>${s.prefixo||'—'}</strong></td>
             <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.motorista||''}">${s.motorista||'—'}</td>
