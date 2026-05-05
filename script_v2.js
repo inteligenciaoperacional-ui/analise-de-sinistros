@@ -631,7 +631,18 @@ window.finalizarRelatorio = async function() {
             'exibir_etapa10','exibir_etapa11','exibir_etapa12',
             'grafico_labels','grafico_vel','grafico_rpm','grafico_ace','grafico_fre'
         ];
-        const dados = { criadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+        // Detecta versão: se veio de um registro original, incrementa
+        const origemId = sessionStorage.getItem('sinistro_origem_id');
+        const origemVersao = parseInt(sessionStorage.getItem('sinistro_origem_versao') || '1');
+        const versaoAtual = origemId ? origemVersao + 1 : 1;
+        sessionStorage.removeItem('sinistro_origem_id');
+        sessionStorage.removeItem('sinistro_origem_versao');
+
+        const dados = {
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            versao: versaoAtual,
+            origem_id: origemId || null
+        };
         textKeys.forEach(function(k) {
             var v = localStorage.getItem('rel_' + k);
             if (v !== null) dados[k] = v;
