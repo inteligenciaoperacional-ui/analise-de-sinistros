@@ -73,7 +73,7 @@ function validarEtapaComSwitch(idSwitch, storageKeyFoto, nomeEtapa, relExibirKey
     const isAtivo = sw && sw.checked;
 
     if (isAtivo) {
-        const foto = localStorage.getItem(storageKeyFoto);
+        const foto = fotosMemoria[storageKeyFoto];
         if (!foto) {
             alert(`⚠️ Atenção: O switch de "${nomeEtapa}" está ATIVO, mas nenhuma imagem foi detectada. Cole ou arraste a imagem ou desative o botão para continuar.`);
             return false;
@@ -81,7 +81,7 @@ function validarEtapaComSwitch(idSwitch, storageKeyFoto, nomeEtapa, relExibirKey
         localStorage.setItem(relExibirKey, "Sim");
     } else {
         localStorage.setItem(relExibirKey, "Não");
-        localStorage.setItem(storageKeyFoto, `Condutor não possui ${nomeEtapa} no período de 2025/2026`);
+        fotosMemoria[storageKeyFoto] = `Condutor não possui ${nomeEtapa} no período de 2025/2026`;
     }
     return true;
 }
@@ -127,8 +127,8 @@ function adicionarBotaoDeletar(areaId, prevId, storageKey) {
         // Mostra o placeholder novamente
         const ph = area.querySelector('.placeholder-interno');
         if (ph) ph.style.display = 'block';
-        // Remove do localStorage
-        localStorage.removeItem(storageKey);
+        // Remove da memória
+        delete fotosMemoria[storageKey];
         // Remove o botão
         btn.remove();
     });
@@ -152,7 +152,7 @@ function processarImagem(file, prevId, storageKey, areaId) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.95);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
             const prev = document.getElementById(prevId);
             const area = document.getElementById(areaId);
 
@@ -164,7 +164,9 @@ function processarImagem(file, prevId, storageKey, areaId) {
                 const ph = area.querySelector('.placeholder-interno');
                 if (ph) ph.style.display = "none";
             }
-            localStorage.setItem(storageKey, compressedBase64);
+
+            // Salva em memória (sem limite) em vez do localStorage (limitado a 5MB)
+            fotosMemoria[storageKey] = compressedBase64;
 
             // Adiciona botão de deletar após inserir a foto
             adicionarBotaoDeletar(areaId, prevId, storageKey);
@@ -239,7 +241,16 @@ async function carregarDadosTelemetria() {
         }
         const linhas = linhasBrutas.map(l => parseCSVLine(l));
         
-        const idxTime = 49, idxAce = 1, idxFreio = 38, idxRPM = 41, idxVel = 47;
+        // ═══════════════════════════════════════════════════════
+// ÍNDICES DAS COLUNAS — NÃO ALTERAR
+// Confirmados em 26/04/2026 — planilha Análise de Sinistro
+//   AX (col 49) = Horário
+//   AV (col 47) = Velocidade
+//   AP (col 41) = RPM
+//   AM (col 38) = Pedal de Freio
+//   B  (col  1) = Acelerador %
+// ═══════════════════════════════════════════════════════
+const idxTime = 49, idxAce = 1, idxFreio = 38, idxRPM = 41, idxVel = 47;
         let labels = [], dVel = [], dRPM = [], dAce = [], dFreio = [];
         // Le linhas 2 a 13 da planilha (indices 1-12 do CSV) e inverte: linha13->2 = cronologico
         const dadosDesejados = linhas.slice(1, 13).reverse();
@@ -441,7 +452,7 @@ window.voltarParaOcorrencia = () => {
 };
 
 window.irParaImagensLocal = function() {
-    if (!localStorage.getItem('rel_foto_gps')) return alert("⚠️ Anexe a imagem do GPS (2.0)");
+    if (!fotosMemoria['rel_foto_gps']) return alert("⚠️ Anexe a imagem do GPS (2.0)");
     document.getElementById('tela_gps').style.display = 'none';
     document.getElementById('tela_imagens_local').style.display = 'block';
     restaurarFotos([['areaSentidoVeiculo','prevSentidoVeiculo','rel_foto_sentido_v'],['areaSentidoOposto','prevSentidoOposto','rel_foto_sentido_o']]);
@@ -455,8 +466,8 @@ window.voltarParaGPS = () => {
 
 window.irParaGPSConclusao = function() {
     const vel = document.getElementById('velocidade_via').value;
-    const f1 = localStorage.getItem('rel_foto_sentido_v');
-    const f2 = localStorage.getItem('rel_foto_sentido_o');
+    const f1 = fotosMemoria['rel_foto_sentido_v'];
+    const f2 = fotosMemoria['rel_foto_sentido_o'];
     if (!f1 || !f2) return alert("⚠️ Cole as fotos do local (3.0)");
     if (!vel) return alert("⚠️ Selecione a velocidade da via.");
     
@@ -473,7 +484,7 @@ window.voltarParaImagensLocal = () => {
 };
 
 window.irParaEtapa5 = function() {
-    const f = localStorage.getItem('rel_foto_previa'); 
+    const f = fotosMemoria['rel_foto_previa'];
     if (!f) return alert("⚠️ Anexe a imagem do GPS Conclusão (4.0)");
     document.getElementById('tela_gps_conclusao').style.display = 'none';
     document.getElementById('tela_fotos_sinistro').style.display = 'block';
