@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Histórico de Sinistros — Grupo JCA</title>
-   <link rel="icon" type="image/png" href="https://res.cloudinary.com/dxnruvmgu/image/upload/v1775248407/Intelig%C3%AAncia_branco_m524fk.png">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
 
         .sidebar {
@@ -123,6 +122,21 @@
         }
         .btn-editar:hover { background: #d0e3ff; }
         .btn-editar:disabled { opacity: 0.5; cursor: wait; }
+        .badge-versao {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            background: #00003c;
+            color: #fff;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .badge-versao.v1 { background: #6c757d; }
+        .badge-versao.v2 { background: #1a4daa; }
+        .badge-versao.v3 { background: #6f42c1; }
+        .badge-versao.v4 { background: #c07000; }
 
         .loading-box { text-align: center; padding: 50px; color: #888; font-size: 14px; }
         .spinner {
@@ -135,13 +149,15 @@
         .vazio { text-align: center; padding: 50px; color: #bbb; }
         .vazio strong { display: block; font-size: 16px; color: #ccc; margin-bottom: 6px; }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <aside class="sidebar">
     <div class="sidebar-logo">
         <img src="https://res.cloudinary.com/dxnruvmgu/image/upload/v1770865209/Intelig%C3%AAncia_vertical_branco_eqljpf.png"
-             style="width:120px;display:block;margin:0 auto 14px;">
+             style="width:120px;display:block;margin:0 auto 14px;"
+             onerror="this.src='https://res.cloudinary.com/dxnruvmgu/image/upload/v1770865209/Inteligencia_vertical_branco_eqljpf.png'">
         <span>Sistema de Perícia Técnica</span>
         <h2>Histórico de Sinistros</h2>
     </div>
@@ -171,19 +187,12 @@
             <option value="">Todos</option>
             <option>Colisão Lateral</option>
             <option>Colisão com Veículo a Frente</option>
-            <option>Colisão com Objeto Fixo</option>
             <option>Colisão Traseira</option>
             <option>Colisão Frontal</option>
             <option>Colisão em Marcha Ré</option>
-            <option>Colisão na Transversal (Cruzamento)</option>
             <option>Atropelamento de Animais</option>
             <option>Atropelamento de Pedestres</option>
-            <option>Engarrafamento</option>
-            <option>tomabamento/Capotamento</option>
-            <option>Incidente (Alvejamento)</option>
-            <option>Incidente (Apedrejamento)</option>
-            <option>Incidente (Queda de Passageiros)</option>
-            <option>Incidente (Óbbito Natural)</option>
+            <option>Tombamento/Capotamento</option>
         </select>
     </div>
 
@@ -238,6 +247,7 @@
                 <thead>
                     <tr>
                         <th>Data</th>
+                        <th>Versão</th>
                         <th>Empresa</th>
                         <th>Prefixo</th>
                         <th>Motorista</th>
@@ -345,7 +355,14 @@ function renderizar(lista) {
     vazio.style.display = 'none';
     tbody.innerHTML = lista.map(s => `
         <tr>
-            <td><strong>${fmt(s.data_ocorrido)}</strong><br><small style="color:#999">${s.hora_ocorrido||''}</small></td>
+            <td>
+                <strong>${fmt(s.data_ocorrido)}</strong>
+                <br><small style="color:#999">${s.hora_ocorrido||''}</small>
+            </td>
+            <td>
+                <span class="badge-versao v${s.versao||1}">V${s.versao||1}</span>
+                ${s.origem_id ? '<br><small style="color:#aaa;font-size:10px;">origem: '+s.origem_id.substring(0,6)+'...</small>' : ''}
+            </td>
             <td><span class="badge badge-empresa">${s.empresa||'—'}</span></td>
             <td><strong>${s.prefixo||'—'}</strong></td>
             <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.motorista||''}">${s.motorista||'—'}</td>
@@ -366,8 +383,11 @@ function renderizar(lista) {
 async function editarV2(id, btn) {
     btn.disabled = true; btn.textContent = '⏳';
     try {
-        // Salva apenas o ID — o Index carrega tudo (textos + fotos) do Firestore
+        // Salva ID de origem e versão para controle de versionamento
+        const registro = todos.find(s => s._id === id);
         sessionStorage.setItem('sinistro_editar_id', id);
+        sessionStorage.setItem('sinistro_origem_id', id);
+        sessionStorage.setItem('sinistro_origem_versao', String(registro?.versao || 1));
         window.location.href = 'Index_v2.html';
     } catch(e) {
         alert('Erro: ' + e.message);
